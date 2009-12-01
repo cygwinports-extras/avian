@@ -1,0 +1,20 @@
+error: invalid conversion from 'const jbyte*' to 'jbyte*'
+error: initializing argument 4 of 'void 
+_Jv_JNIEnv::SetByteArrayRegion(__jbyteArray*, jsize, jsize, jbyte*)'
+
+--- origsrc/avian/classpath/java-nio.cpp	2009-04-11 11:32:27.000000000 -0500
++++ src/avian/classpath/java-nio.cpp	2009-11-30 20:28:48.885396500 -0600
+@@ -42,11 +42,11 @@ inline void* operator new(size_t, void* 
+ namespace {
+ 
+ inline jbyteArray
+-charsToArray(JNIEnv* e, const char* s)
++charsToArray(JNIEnv* e, char* s)
+ {
+   unsigned length = strlen(s);
+   jbyteArray a = e->NewByteArray(length + 1);
+-  e->SetByteArrayRegion(a, 0, length + 1, reinterpret_cast<const jbyte*>(s));
++  e->SetByteArrayRegion(a, 0, length + 1, reinterpret_cast<jbyte*>(s));
+   return a;
+ }
+ 

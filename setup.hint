@@ -1,0 +1,6 @@
+category: Interpreters Java
+requires: libgcc1 zlib0
+sdesc: "Lightweight Java subset virtual machine"
+ldesc: "Avian is a lightweight virtual machine and class library 
+designed to provide a useful subset of Java's features, suitable for 
+building self-contained applications."

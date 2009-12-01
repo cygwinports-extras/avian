@@ -1,0 +1,32 @@
+inherit java
+
+DESCRIPTION="Lightweight virtual machine for subset of Java"
+HOMEPAGE="http://oss.readytalk.com/avian/"
+SRC_URI="http://oss.readytalk.com/avian/${P}.tar.bz2"
+SRC_DIR=${PN}
+
+PATCH_URI="
+	0.2-cygwin.patch
+	0.2-javac-compat.patch
+	0.2-jni.patch
+	0.2-ucontext.patch
+"
+
+src_compile() {
+	lndirs
+	cd ${B}
+	cygmake build javadoc
+}
+
+src_test() {
+	cd ${B}
+	cygmake run
+	cygtest
+}
+
+src_install() {
+	cd ${B}
+	dobin build/cygwin-i386/avian.exe
+	dojavadoc build/javadoc
+	dodoc *.txt
+}
