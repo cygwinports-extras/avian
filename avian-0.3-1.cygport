@@ -6,16 +6,15 @@ SRC_URI="http://oss.readytalk.com/avian/${P}.tar.bz2"
 SRC_DIR=${PN}
 
 PATCH_URI="
-	0.2-cygwin.patch
-	0.2-javac-compat.patch
-	0.2-jni.patch
-	0.2-ucontext.patch
+	0.3-cygwin.patch
+	0.3-jni.patch
+	0.3-ucontext.patch
 "
 
 src_compile() {
 	lndirs
 	cd ${B}
-	cygmake build javadoc
+	cygmake build javadoc rdynamic=  warnings=
 }
 
 src_test() {

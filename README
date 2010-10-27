@@ -5,18 +5,17 @@ provide a useful subset of Java's features, suitable for building
 self-contained applications.
 
 Runtime requirements:
-  cygwin-1.7.0-67
-  libgcc1-4.3.4-1
-  zlib0-1.2.3-10
+  cygwin-1.7.7-1
+  zlib0-1.2.5-1
 
 Build requirements:
 (besides corresponding -devel packages)
-  binutils-2.19.51-1
-  classpath-0.98-1
-  cygport-0.9.10-1
-  ecj-3.3.2-1
-  gcc4-core-4.3.4-1
-  gcc4-g++-4.3.4-1
+  binutils-2.20.51-2
+  classpath-0.98-2
+  cygport-0.10.1-1
+  gcc4-core-4.5.0-1
+  gcc4-g++-4.5.0-1
+  jdk6-langtools-1.6.0_20-1
   make-3.81-2
 
 Canonical website:
@@ -28,19 +27,22 @@ Canonical download:
 -------------------------------------------
 
 Build instructions:
-  unpack avian-0.2-X-src.tar.bz2
+  unpack avian-0.3-X-src.tar.bz2
     if you use setup to install this src package, it will be
 	 unpacked under /usr/src automatically
   cd /usr/src
-  cygport ./avian-0.2-X.cygport all
+  cygport ./avian-0.3-X.cygport all
 
 This will create:
-  /usr/src/avian-0.2-X-src.tar.bz2
-  /usr/src/avian-0.2-X.tar.bz2
+  /usr/src/avian-0.3-X-src.tar.bz2
+  /usr/src/avian-0.3-X.tar.bz2
 
 -------------------------------------------
 
 Port Notes:
+
+----- version 0.3-1 -----
+Version bump.
 
 ----- version 0.2-1 -----
 Initial release for Cygwin 1.7.

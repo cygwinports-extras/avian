@@ -1,0 +1,180 @@
+--- origsrc/avian/classpath/java-lang.cpp	2009-12-12 19:58:18.000000000 -0600
++++ src/avian/classpath/java-lang.cpp	2010-10-26 23:59:53.307180500 -0500
+@@ -43,16 +43,24 @@
+ 
+ #else // not PLATFORM_WINDOWS
+ 
+-#  define SO_PREFIX "lib"
++#  ifdef __CYGWIN__
++#    define SO_PREFIX "cyg"
++#  else
++#    define SO_PREFIX "lib"
++#  endif
+ #  ifdef __APPLE__
+ #    define SO_SUFFIX ".jnilib"
+ #    include <CoreServices/CoreServices.h>
++#  elif defined __CYGWIN__
++#    define SO_SUFFIX ".dll"
+ #  else
+ #    define SO_SUFFIX ".so"
+ #  endif
+ #  include "unistd.h"
+ #  include "sys/time.h"
+-#  include "sys/sysctl.h"
++#  ifndef __CYGWIN__
++#    include "sys/sysctl.h"
++#  endif
+ #  include "sys/utsname.h"
+ #  include "sys/wait.h"
+ 
+@@ -412,6 +420,8 @@ Java_java_lang_System_getProperty(JNIEnv
+     } else if (strcmp(chars, "os.name") == 0) {
+ #ifdef __APPLE__
+       r = e->NewStringUTF("Mac OS X");
++#elif defined __CYGWIN__
++      r = e->NewStringUTF("Cygwin");
+ #else
+       r = e->NewStringUTF("Linux");
+ #endif
+--- origsrc/avian/classpath/jni-util.h	2009-12-02 20:04:01.000000000 -0600
++++ src/avian/classpath/jni-util.h	2010-10-27 00:02:10.868220300 -0500
+@@ -17,14 +17,18 @@
+ 
+ #undef JNIEXPORT
+ 
++#if (defined __MINGW32__) || (defined _MSC_VER) || (defined __CYGWIN__)
++#  define JNIEXPORT __declspec(dllexport)
++#else
++#  define JNIEXPORT __attribute__ ((visibility("default")))
++#endif
++
+ #if (defined __MINGW32__) || (defined _MSC_VER)
+ #  define PLATFORM_WINDOWS
+ #  define PATH_SEPARATOR ';'
+-#  define JNIEXPORT __declspec(dllexport)
+ #else // not (defined __MINGW32__) || (defined _MSC_VER)
+ #  define PLATFORM_POSIX
+ #  define PATH_SEPARATOR ':'
+-#  define JNIEXPORT __attribute__ ((visibility("default")))
+ #endif // not (defined __MINGW32__) || (defined _MSC_VER)
+ 
+ #ifdef _MSC_VER
+--- origsrc/avian/makefile	2009-12-14 18:51:09.000000000 -0600
++++ src/avian/makefile	2010-10-26 22:51:47.900011400 -0500
+@@ -15,7 +15,7 @@ build-platform := \
+ 
+ arch = $(build-arch)
+ bootimage-platform = \
+-	$(subst cygwin,windows,$(subst mingw32,windows,$(build-platform)))
++	$(subst mingw32,windows,$(build-platform))
+ platform = $(bootimage-platform)
+ 
+ mode = fast
+@@ -223,6 +223,16 @@ ifeq ($(platform),windows)
+ 	endif
+ endif
+ 
++ifeq ($(platform),cygwin)
++	object-format = pe-i386
++
++	so-prefix = cyg
++	so-suffix = .dll
++	exe-suffix = .exe
++
++	cflags = $(common-cflags) -I$(src)
++endif
++
+ ifeq ($(mode),debug)
+ 	cflags += -O0 -g3
+ 	strip = :
+@@ -664,7 +674,7 @@ $(classpath-object): $(build)/classpath.
+ $(generator-objects): $(native-build)/%.o: $(src)/%.cpp
+ 	@echo "compiling $(@)"
+ 	@mkdir -p $(dir $(@))
+-	$(build-cxx) -DPOINTER_SIZE=$(pointer-size) -O0 -g3 $(build-cflags) \
++	$(build-cxx) -DPOINTER_SIZE=$(pointer-size) -O0 -g3 $(cflags) \
+ 		-c $(<) -o $(@)
+ 
+ $(jni-objects): $(native-build)/%.o: $(classpath)/%.cpp
+--- origsrc/avian/src/binaryToObject/main.cpp	2009-11-24 09:11:02.000000000 -0600
++++ src/avian/src/binaryToObject/main.cpp	2010-10-26 23:34:32.731693600 -0500
+@@ -93,7 +93,8 @@ writeObject(uint8_t* data, unsigned size
+         (data, size, out, startName, endName, architecture, alignment,
+          writable, executable);
+     }
+-  } else if (strcmp("windows", platform) == 0
++  } else if ((strcmp("windows", platform) == 0
++              or strcmp("cygwin", platform) == 0)
+              and ((strcmp("x86_64", architecture) == 0
+                    or strcmp("i386", architecture) == 0)))
+   {
+--- origsrc/avian/src/boot.cpp	2009-12-02 19:50:46.000000000 -0600
++++ src/avian/src/boot.cpp	2010-10-26 23:44:16.560716400 -0500
+@@ -24,7 +24,7 @@ extern "C" void __cxa_pure_virtual(void)
+ 
+ #endif // not _MSC_VER
+ 
+-#if (defined __MINGW32__) || (defined _MSC_VER)
++#if (defined __MINGW32__) || (defined _MSC_VER) || (defined __CYGWIN__)
+ #  define EXPORT __declspec(dllexport)
+ #else
+ #  define EXPORT __attribute__ ((visibility("default")))
+@@ -32,7 +32,7 @@ extern "C" void __cxa_pure_virtual(void)
+ 
+ #ifdef BOOT_IMAGE
+ 
+-#if (defined __MINGW32__) || (defined _MSC_VER)
++#if (defined __MINGW32__) || (defined _MSC_VER) || (defined __CYGWIN__)
+ #  define SYMBOL(x) binary_bootimage_bin_##x
+ #else
+ #  define SYMBOL(x) _binary_bootimage_bin_##x
+@@ -56,7 +56,7 @@ extern "C" {
+ 
+ #ifdef BOOT_CLASSPATH
+ 
+-#if (defined __MINGW32__) || (defined _MSC_VER)
++#if (defined __MINGW32__) || (defined _MSC_VER) || (defined __CYGWIN__)
+ #  define SYMBOL(x) binary_classpath_jar_##x
+ #else
+ #  define SYMBOL(x) _binary_classpath_jar_##x
+--- origsrc/avian/src/common.h	2009-12-02 19:47:44.000000000 -0600
++++ src/avian/src/common.h	2010-10-26 23:46:30.455749900 -0500
+@@ -89,13 +89,17 @@ typedef uint64_t uintptr_t;
+ #endif // not _MSC_VER
+ 
+ #undef JNIEXPORT
+-#ifdef PLATFORM_WINDOWS
++#if (defined PLATFORM_WINDOWS) || (defined __CYGWIN__)
+ #  define JNIEXPORT __declspec(dllexport)
+-#  define PATH_SEPARATOR ';'
+-#else // not PLATFORM_WINDOWS
++#else
+ #  define JNIEXPORT __attribute__ ((visibility("default")))
++#endif
++
++#ifdef PLATFORM_WINDOWS
++#  define PATH_SEPARATOR ';'
++#else
+ #  define PATH_SEPARATOR ':'
+-#endif // not PLATFORM_WINDOWS
++#endif
+ 
+ #if (defined ARCH_x86_32) || (defined ARCH_powerpc) || (defined ARCH_arm)
+ #  define LD "ld"
+@@ -127,13 +131,15 @@ typedef uint64_t uintptr_t;
+ 
+ #ifdef PLATFORM_WINDOWS
+ #  define SO_PREFIX ""
++#elif defined(__CYGWIN__)
++#  define SO_PREFIX "cyg"
+ #else
+ #  define SO_PREFIX "lib"
+ #endif
+ 
+ #ifdef __APPLE__
+ #  define SO_SUFFIX ".jnilib"
+-#elif defined PLATFORM_WINDOWS
++#elif defined PLATFORM_WINDOWS || defined __CYGWIN__
+ #  define SO_SUFFIX ".dll"
+ #else
+ #  define SO_SUFFIX ".so"

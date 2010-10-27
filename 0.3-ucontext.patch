@@ -1,26 +1,16 @@
---- origsrc/avian/src/posix.cpp	2009-04-11 11:32:27.000000000 -0500
-+++ src/avian/src/posix.cpp	2009-11-30 20:28:48.900996500 -0600
-@@ -24,13 +24,19 @@
+--- origsrc/avian/src/posix.cpp	2009-12-05 16:41:08.000000000 -0600
++++ src/avian/src/posix.cpp	2010-10-26 23:26:44.063972100 -0500
+@@ -25,7 +25,9 @@
  #include "unistd.h"
  #include "pthread.h"
  #include "signal.h"
 +#ifndef __CYGWIN__
- #include "ucontext.h"
+ #include "sys/ucontext.h"
 +#endif
  #include "stdint.h"
  #include "dirent.h"
  
- #include "arch.h"
- #include "system.h"
- 
-+#ifndef RTLD_LOCAL
-+#define RTLD_LOCAL 0
-+#endif
-+
- #define ACQUIRE(x) MutexResource MAKE_NAME(mutexResource_) (x)
- 
- using namespace vm;
-@@ -806,6 +812,7 @@ class MySystem: public System {
+@@ -802,6 +804,7 @@ class MySystem: public System {
  void
  handleSignal(int signal, siginfo_t* info, void* context)
  {
@@ -28,7 +18,7 @@
    ucontext_t* c = static_cast<ucontext_t*>(context);
  
  #ifndef BASE_REGISTER
-@@ -816,10 +823,12 @@ handleSignal(int signal, siginfo_t* info
+@@ -812,10 +815,12 @@ handleSignal(int signal, siginfo_t* info
    void* base = reinterpret_cast<void*>(BASE_REGISTER(c));
    void* stack = reinterpret_cast<void*>(STACK_REGISTER(c));
    void* thread = reinterpret_cast<void*>(THREAD_REGISTER(c));
@@ -41,8 +31,8 @@
    case VisitSignal: {
      index = VisitSignalIndex;
  
-@@ -853,6 +862,7 @@ handleSignal(int signal, siginfo_t* info
-       vmJump(ip, base, stack, thread);
+@@ -853,6 +858,7 @@ handleSignal(int signal, siginfo_t* info
+       vmJump(ip, base, stack, thread, 0, 0);
      }
    } break;
 +#endif
